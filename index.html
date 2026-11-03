@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Маленькая планета</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Unbounded:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="frames/f001.webp">
+<style>
+  :root {
+    --ink: #3a2148;          /* тёмно-сливовый текст на светлом небе */
+    --ink-soft: #6b4d72;
+    --cream: #fff7ef;
+    --violet: #6a3fc1;       /* как худи мальчика в кадре */
+    --violet-deep: #4f2c99;
+    --sun: #ffc53d;
+    --night: #1c1633;
+    --header-h: 84px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--night);
+    color: var(--ink);
+    font-family: "Nunito", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+
+  /* ---------- Шапка ---------- */
+  .header {
+    position: fixed; inset: 0 0 auto 0; z-index: 20;
+    height: var(--header-h);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 clamp(24px, 4vw, 64px);
+    color: var(--hdr, var(--ink));
+    transition: color .4s ease;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; font-family: "Unbounded", sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
+  .logo svg { width: 36px; height: 36px; }
+  .nav { display: flex; gap: clamp(20px, 2.6vw, 40px); font-weight: 700; font-size: 16px; }
+  .nav a { opacity: .85; transition: opacity .2s; }
+  .nav a:hover { opacity: 1; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    height: 52px; padding: 0 28px; border-radius: 999px;
+    font-family: "Nunito", sans-serif; font-weight: 800; font-size: 16px;
+    background: var(--violet); color: #fff; border: 0; cursor: pointer;
+    box-shadow: 0 10px 30px -10px rgba(79, 44, 153, .7);
+    transition: transform .2s ease, background .2s ease;
+  }
+  .btn:hover { background: var(--violet-deep); transform: translateY(-2px); }
+  .btn--sun { background: var(--sun); color: var(--ink); box-shadow: 0 10px 30px -10px rgba(255, 197, 61, .8); }
+  .btn--sun:hover { background: #ffd466; }
+  .btn--sm { height: 44px; padding: 0 22px; font-size: 15px; }
+
+  /* ---------- Скролл-сцена ---------- */
+  .scrolly { position: relative; height: 520vh; }
+  .stage {
+    position: sticky; top: 0; height: 100vh; overflow: hidden;
+    background: #f6cdb4 url("frames/f001.webp") center / cover no-repeat;
+  }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  /* Затемнение снизу, чтобы заголовок первой сцены читался поверх травы */
+  .stage::after {
+    content: ""; position: absolute; inset: auto 0 0 0; height: 62%; z-index: 1;
+    background: linear-gradient(to top, rgba(40, 18, 52, .78) 0%, rgba(40, 18, 52, .45) 45%, rgba(40, 18, 52, 0) 100%);
+    opacity: var(--veil, 1); pointer-events: none;
+  }
+
+  .scene {
+    position: absolute; z-index: 2; pointer-events: none;
+    opacity: 0; will-change: opacity, transform;
+  }
+  .scene.is-on { pointer-events: auto; }
+
+  /* Сцена 1 — главный заголовок */
+  .s1 { left: clamp(24px, 4vw, 64px); bottom: 10vh; max-width: 960px; color: #fff; }
+  .s1 h1 em { white-space: nowrap; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: 999px;
+    background: rgba(255, 255, 255, .9);
+    font-weight: 800; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--violet-deep);
+  }
+  h1, h2 { font-family: "Unbounded", sans-serif; letter-spacing: -.025em; line-height: 1.02; }
+  .s1 h1 { margin-top: 18px; font-size: clamp(44px, 4.8vw, 80px); font-weight: 800; text-shadow: 0 4px 30px rgba(40, 18, 52, .45); }
+  .s1 h1 em { font-style: normal; color: var(--sun); }
+  .s1 p { margin-top: 18px; max-width: 520px; font-size: clamp(17px, 1.3vw, 20px); font-weight: 600; line-height: 1.5; opacity: .92; }
+  .s1 .actions { margin-top: 28px; display: flex; gap: 14px; }
+
+  .hint {
+    position: absolute; right: clamp(24px, 4vw, 64px); bottom: 10vh; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    font-weight: 800; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: #fff;
+    text-shadow: 0 1px 12px rgba(58, 33, 72, .5);
+  }
+  .hint .mouse { width: 26px; height: 40px; border: 2px solid #fff; border-radius: 14px; position: relative; }
+  .hint .mouse::after {
+    content: ""; position: absolute; left: 50%; top: 8px; width: 4px; height: 8px; margin-left: -2px;
+    background: #fff; border-radius: 2px; animation: wheel 1.6s ease-in-out infinite;
+  }
+  @keyframes wheel { 0% { opacity: 0; transform: translateY(-2px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateY(10px); } }
+
+  /* Сцены 2 и 3 — карточки-подписи по бокам */
+  .card {
+    width: min(380px, 30vw); padding: 26px 28px; border-radius: 28px;
+    background: rgba(255, 248, 241, .78); backdrop-filter: blur(14px);
+    box-shadow: 0 24px 60px -24px rgba(58, 33, 72, .45);
+  }
+  .card .num { font-family: "Unbounded", sans-serif; font-weight: 800; font-size: 14px; color: var(--violet); letter-spacing: .08em; }
+  .card h2 { margin-top: 10px; font-size: clamp(26px, 2.1vw, 34px); font-weight: 700; }
+  .card p { margin-top: 12px; font-size: 17px; line-height: 1.5; font-weight: 600; color: var(--ink-soft); }
+  .s2 { left: clamp(24px, 5vw, 96px); top: 17vh; }
+  .s3 { right: clamp(24px, 5vw, 96px); top: 20vh; }
+
+  /* Сцена 4 — финал на ночном небе */
+  .s4 {
+    left: 0; right: 0; top: calc(var(--header-h) + 4vh); bottom: 9vh; padding: 0 24px;
+    display: flex; flex-direction: column; align-items: center; text-align: center; color: #fff;
+  }
+  .s4 h2 { font-size: clamp(40px, 4.6vw, 76px); font-weight: 800; text-shadow: 0 4px 30px rgba(28, 22, 51, .6); }
+  .s4 h2 em { font-style: normal; color: var(--sun); }
+  .s4 p { margin: 16px auto 0; max-width: 520px; font-size: 19px; font-weight: 600; opacity: .9; line-height: 1.5; }
+  .s4 .actions { margin-top: auto; display: flex; justify-content: center; gap: 14px; }
+  .btn--ghost { background: rgba(255, 255, 255, .14); color: #fff; box-shadow: none; backdrop-filter: blur(8px); border: 1.5px solid rgba(255, 255, 255, .45); }
+  .btn--ghost:hover { background: rgba(255, 255, 255, .24); }
+
+  /* Прогресс сцены */
+  .progress { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; z-index: 3; background: rgba(255, 255, 255, .2); }
+  .progress i { display: block; height: 100%; width: 100%; background: var(--sun); transform-origin: 0 50%; transform: scaleX(var(--p, 0)); }
+
+  /* Загрузка кадров */
+  .loader {
+    position: absolute; right: 24px; bottom: 20px; z-index: 3;
+    font-weight: 700; font-size: 12px; color: rgba(255, 255, 255, .85);
+    transition: opacity .5s;
+  }
+  .loader.is-done { opacity: 0; }
+
+  /* ---------- Следующий блок, чтобы сцена мягко отпускала ---------- */
+  .after { background: var(--night); color: #fff; padding: 120px clamp(24px, 6vw, 120px) 140px; }
+  .after h2 { font-size: clamp(32px, 3vw, 48px); max-width: 760px; }
+  .after .grid { margin-top: 56px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .after .item { padding: 32px; border-radius: 28px; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .1); }
+  .after .item b { display: block; font-family: "Unbounded", sans-serif; font-size: 22px; margin-bottom: 10px; }
+  .after .item span { opacity: .75; line-height: 1.55; font-size: 17px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .hint .mouse::after { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header" id="header">
+  <a class="logo" href="#top" aria-label="Маленькая планета — на главную">
+    <svg viewBox="0 0 40 40" aria-hidden="true">
+      <circle cx="20" cy="20" r="12" fill="#6a3fc1"/>
+      <path d="M11 17c4 1 6-2 9-1s4 4 8 3" stroke="#7ad06b" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <ellipse cx="20" cy="21" rx="18" ry="5.5" fill="none" stroke="#ffc53d" stroke-width="2.5" transform="rotate(-14 20 21)"/>
+    </svg>
+    Маленькая планета
+  </a>
+  <nav class="nav" aria-label="Основное меню">
+    <a href="#about">О нас</a>
+    <a href="#about">Программы</a>
+    <a href="#about">Расписание</a>
+    <a href="#about">Контакты</a>
+  </nav>
+  <a class="btn btn--sm" href="#about">Записаться</a>
+</header>
+
+<main id="top">
+  <section class="scrolly" id="scrolly" aria-label="Главный экран">
+    <div class="stage" id="stage">
+      <canvas id="canvas" aria-hidden="true"></canvas>
+
+      <div class="scene s1" data-in="-1" data-out="0.2">
+        <span class="eyebrow">★ Детский клуб для 4–10 лет</span>
+        <h1>Мир, где дружба<br>начинается <em>с игры</em></h1>
+        <p>Творчество, приключения и новые друзья каждый день. Место, куда дети бегут с радостью.</p>
+        <div class="actions">
+          <a class="btn btn--sun" href="#about">Записаться на пробное</a>
+          <a class="btn btn--ghost" href="#about">Программы</a>
+        </div>
+      </div>
+
+      <div class="scene s2" data-in="0.26" data-out="0.5">
+        <div class="card">
+          <div class="num">01</div>
+          <h2>Вместе веселее</h2>
+          <p>Небольшие группы до 10 детей. Каждый ребёнок находит свою компанию и чувствует себя своим.</p>
+        </div>
+      </div>
+
+      <div class="scene s3" data-in="0.52" data-out="0.74">
+        <div class="card">
+          <div class="num">02</div>
+          <h2>Каждый день — открытие</h2>
+          <p>Наука, рисование, театр и прогулки. Программа меняется каждую неделю, скучно не бывает.</p>
+        </div>
+      </div>
+
+      <div class="scene s4" data-in="0.84" data-out="2">
+        <h2>Целая планета<br>для <em>ваших детей</em></h2>
+        <p>Приходите на бесплатное пробное занятие и познакомьтесь с нами.</p>
+        <div class="actions">
+          <a class="btn btn--sun" href="#about">Записаться на пробное</a>
+          <a class="btn btn--ghost" href="#about">Смотреть программы</a>
+        </div>
+      </div>
+
+      <div class="hint" id="hint"><span class="mouse"></span>Листайте вниз</div>
+      <div class="loader" id="loader">Загрузка 0%</div>
+      <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+    </div>
+  </section>
+
+  <section class="after" id="about">
+    <h2>Здесь начинается следующий блок сайта</h2>
+    <div class="grid">
+      <div class="item"><b>Программы</b><span>Короткое описание направлений клуба.</span></div>
+      <div class="item"><b>Педагоги</b><span>Кто работает с детьми и почему им можно доверять.</span></div>
+      <div class="item"><b>Расписание</b><span>Дни, время и как записаться.</span></div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const FRAME_COUNT = 144;
+  const src = i => `frames/f${String(i + 1).padStart(3, "0")}.webp`;
+
+  const scrolly = document.getElementById("scrolly");
+  const stage = document.getElementById("stage");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const header = document.getElementById("header");
+  const hint = document.getElementById("hint");
+  const bar = document.getElementById("bar");
+  const loader = document.getElementById("loader");
+  const scenes = [...document.querySelectorAll(".scene")];
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const frames = new Array(FRAME_COUNT);
+  let loaded = 0;
+  let current = 0;      // кадр, который сейчас на экране (дробный, для плавности)
+  let target = 0;       // кадр, который соответствует скроллу
+  let drawn = -1;
+
+  /* Канвас под размер экрана с учётом ретины */
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(stage.clientWidth * dpr);
+    canvas.height = Math.round(stage.clientHeight * dpr);
+    drawn = -1;
+    draw(Math.round(current));
+  }
+
+  /* Ближайший уже загруженный кадр, если нужный ещё грузится */
+  function nearestLoaded(i) {
+    for (let d = 0; d < FRAME_COUNT; d++) {
+      if (frames[i - d]?.ready) return i - d;
+      if (frames[i + d]?.ready) return i + d;
+    }
+    return -1;
+  }
+
+  function draw(i) {
+    const k = nearestLoaded(i);
+    if (k < 0 || k === drawn) return;
+    const img = frames[k].img;
+    const cw = canvas.width, ch = canvas.height;
+    const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight); // как background-size: cover
+    const w = img.naturalWidth * scale, h = img.naturalHeight * scale;
+    ctx.drawImage(img, (cw - w) / 2, (ch - h) / 2, w, h);
+    drawn = k;
+  }
+
+  /* Сначала первый кадр, затем остальные по порядку, по 6 одновременно */
+  function load(i) {
+    return new Promise(res => {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = src(i);
+      const done = ok => {
+        frames[i] = { img, ready: ok };
+        loaded++;
+        loader.textContent = `Загрузка ${Math.round(loaded / FRAME_COUNT * 100)}%`;
+        if (loaded === FRAME_COUNT) loader.classList.add("is-done");
+        if (ok && Math.abs(i - Math.round(current)) < 4) { drawn = -1; draw(Math.round(current)); }
+        res();
+      };
+      img.onload = () => (img.decode ? img.decode().catch(() => {}) : Promise.resolve()).then(() => done(true));
+      img.onerror = () => done(false);
+    });
+  }
+  async function preload() {
+    await load(0);
+    resize();
+    let next = 1;
+    const worker = async () => { while (next < FRAME_COUNT) await load(next++); };
+    await Promise.all(Array.from({ length: 6 }, worker));
+  }
+
+  /* Прогресс скролла внутри сцены: 0…1 */
+  function progress() {
+    const r = scrolly.getBoundingClientRect();
+    const total = r.height - window.innerHeight;
+    return Math.min(1, Math.max(0, -r.top / total));
+  }
+
+  const clamp01 = v => Math.min(1, Math.max(0, v));
+  const FADE = 0.06; // длина появления/исчезновения текста в долях скролла
+
+  function updateScenes(p) {
+    for (const el of scenes) {
+      const a = +el.dataset.in, b = +el.dataset.out;
+      const fin = clamp01((p - a) / FADE);
+      const fout = clamp01((b - p) / FADE);
+      const o = Math.min(fin, fout);
+      const y = (1 - fin) * 30 - (1 - fout) * 30;
+      el.style.opacity = o.toFixed(3);
+      el.style.transform = `translateY(${y.toFixed(1)}px)`;
+      el.classList.toggle("is-on", o > 0.5);
+    }
+    hint.style.opacity = clamp01(1 - p / 0.06).toFixed(3);
+    bar.style.setProperty("--p", p.toFixed(4));
+    // Под конец небо темнеет: шапка становится светлой, светлая вуаль сверху исчезает
+    const night = clamp01((p - 0.78) / 0.1);
+    header.style.setProperty("--hdr", night > 0.5 ? "#fff" : "var(--ink)");
+    // Нижнее затемнение нужно только под заголовком первой сцены
+    stage.style.setProperty("--veil", clamp01(1 - (p - 0.14) / 0.1).toFixed(3));
+  }
+
+  function onScroll() {
+    const p = progress();
+    target = p * (FRAME_COUNT - 1);
+    updateScenes(p);
+  }
+
+  /* Плавно догоняем нужный кадр, чтобы движение не дёргалось на колесе мыши */
+  function tick() {
+    current += (target - current) * (reduceMotion ? 1 : 0.18);
+    if (Math.abs(target - current) < 0.01) current = target;
+    draw(Math.round(current));
+    requestAnimationFrame(tick);
+  }
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", () => { resize(); onScroll(); });
+  onScroll();
+  current = target;
+  preload();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
